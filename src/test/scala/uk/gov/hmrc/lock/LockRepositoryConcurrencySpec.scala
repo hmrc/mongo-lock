@@ -31,6 +31,7 @@ import uk.gov.hmrc.mongo.MongoSpecSupport
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, Future}
+import scala.util.Random
 
 class LockRepositoryConcurrencySpec extends WordSpecLike with Matchers with OptionValues with MongoSpecSupport with ScalaFutures with LoneElement with Inside with Inspectors {
 
@@ -46,6 +47,13 @@ class LockRepositoryConcurrencySpec extends WordSpecLike with Matchers with Opti
     }
   }
 
+  "If a thread is renewing a lock, and multiple other threads try to obtain it simultaneously, the repository" should {
+    "Ensure that renewing the lock does not provide an opportunity for others to obtain it" in new ConcurrentTestCase {
+      override val explicitlyReleaseLock = false
+      runRenewConcurrencyTest()
+    }
+  }
+
   implicit override val patienceConfig: PatienceConfig = PatienceConfig(
     timeout = scaled(Span(60, Seconds)),
     interval = scaled(Span(150, Millis))
@@ -53,6 +61,7 @@ class LockRepositoryConcurrencySpec extends WordSpecLike with Matchers with Opti
 
   trait ConcurrentTestCase extends Matchers {
 
+    private val rnd = new Random()
     private val repo = new LockRepository() {
 
       override def withCurrentTime[A](f: (DateTime) => A) = f(nextTime())
@@ -94,7 +103,38 @@ class LockRepositoryConcurrencySpec extends WordSpecLike with Matchers with Opti
 
         exactly(1, results.futureValue) should be(true)
       }
+    }
 
+    def runRenewConcurrencyTest() {
+      val numberOfThreads = 20
+      val lockName = "renew"
+
+      await(repo.removeAll)
+
+      (1 to 50) foreach  { i =>
+        val renewThread = rnd.nextInt(10) + 1
+        val renewThreadOwner = s"owner-$i-$renewThread"
+
+        ensureLockedFor(lockName, renewThreadOwner)
+        val threadOutcomes = lockOrRenew(lockName, i, numberOfThreads, renewThread, renewThreadOwner)
+        val successfulThreadOutcomes = threadOutcomes.zipWithIndex
+          .filter { case (result, index) => result }
+          .map { case (result, index) => index + 1 }
+
+        successfulThreadOutcomes.loneElement shouldBe renewThread
+        await(repo.releaseLock(lockName, renewThreadOwner))
+      }
+    }
+
+    def ensureLockedFor(lockName: String, renewThreadOwner: String) = {
+      await(repo.lock(lockName, renewThreadOwner, Duration.standardDays(1)))
+    }
+
+    def lockOrRenew(lockName: String, iteration: Int, numberOfThreads: Int, renewThread: Int, renewThreadOwner: String): IndexedSeq[Boolean] = {
+      Future.sequence((1 to numberOfThreads) map {
+        case n if n == renewThread => repo.renew(lockName, renewThreadOwner, Duration.standardDays(1))
+        case n => repo.lock(lockName, s"owner-$iteration-$n", Duration.standardDays(1))
+      }).futureValue
     }
 
     def beBefore(bound: DateTime) = new Matcher[DateTime] {
