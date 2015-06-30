@@ -112,6 +112,48 @@ class LockRepositorySpec extends WordSpecLike with Matchers with OptionValues wi
     }
   }
 
+  "The renew method" should {
+    "not renew a lock if one does not already exist" in {
+      repo.renew(lockId, owner, new Duration(1000L)).futureValue shouldBe false
+      repo.findAll.futureValue shouldBe empty
+    }
+
+    "not renew a different lock if one exists" in {
+      manuallyInsertLock(Lock("nonMatchingLock", owner, now, now.plusSeconds(1)))
+
+      repo.renew(lockId, owner, new Duration(1000L)).futureValue shouldBe false
+      repo.findAll.futureValue.loneElement shouldBe Lock("nonMatchingLock", owner, now, now.plusSeconds(1))
+    }
+
+    "not change a non-expired lock with a different owner" in {
+      val alternativeOwner = "owner2"
+      manuallyInsertLock(Lock(lockId, alternativeOwner, now, now.plusSeconds(100)))
+
+      repo.renew(lockId, owner, new Duration(1000L)).futureValue shouldBe false
+      repo.findById(lockId).futureValue.map(_.owner) shouldBe Some(alternativeOwner)
+    }
+
+    "change a non-expired lock with the same owner" in {
+      val existingLock = Lock(lockId, owner, now.minusDays(1), now.plusDays(1))
+
+      manuallyInsertLock(existingLock)
+
+      repo.renew(lockId, owner, new Duration(1000L)).futureValue shouldBe true
+      repo.findAll.futureValue.loneElement shouldBe Lock(lockId, owner, existingLock.timeCreated, now.plus(new Duration(1000L)))
+    }
+
+    "change an expired lock" in {
+      val expiredLock = Lock(lockId, owner, now.minusDays(2), now.minusDays(1))
+
+      manuallyInsertLock(expiredLock)
+
+      val gotLock = repo.renew(lockId, owner, new Duration(1000L)).futureValue
+
+      gotLock shouldBe true
+      repo.findAll.futureValue.loneElement shouldBe Lock(lockId, owner, expiredLock.timeCreated, now.plusSeconds(1))
+    }
+  }
+
   "The releaseLock method" should {
 
     "remove an owned and expired lock" in {

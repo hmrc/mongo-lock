@@ -20,11 +20,15 @@ import org.joda.time.{DateTime, Duration}
 import play.api.Logger
 import play.api.libs.json.{Format, JsValue, Json}
 import reactivemongo.api.DB
-import reactivemongo.core.commands.LastError
+import reactivemongo.bson.{BSONDateTime, BSONValue, BSONDocument}
+import reactivemongo.core.commands.{Update, FindAndModify, LastError}
+import reactivemongo.json.collection.JSONCollection
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+
+import scala.util.{Success, Failure}
 
 
 object LockFormats {
@@ -71,6 +75,27 @@ class LockRepository(implicit mongo: () => DB) extends ReactiveRepository[LockFo
           Logger.debug(s"Unable to take lock '$reqLockId' for '$reqOwner'")
           false
         }
+    }
+  }
+
+  def renew(reqLockId: String, reqOwner: String, forceReleaseAfter: Duration): Future[Boolean] = withCurrentTime { now =>
+    val expiryTime = now.plus(forceReleaseAfter)
+
+    val selector = BSONDocument(id -> reqLockId, owner -> reqOwner)
+    val modifier = BSONDocument("$set" -> BSONDocument("expiryTime" -> BSONDateTime(expiryTime.getMillis())))
+
+    // Use findAndModify to ensure the read and the write are performed as one atomic operation
+    val command = FindAndModify(collection.name, selector, Update(modifier, false))
+    this.mongo().command(command).map {
+      case None =>
+        Logger.debug(s"Could not renew lock '$reqLockId' for '$reqOwner' that does not exist")
+        false
+      case Some(_) =>
+        Logger.debug(s"Renewed lock '$reqLockId' for '$reqOwner' at $now.  Expires at: ${expiryTime}")
+        true
+    }.recover { case LastError(_, _, Some(DuplicateKey), _, _, _, _) =>
+      Logger.debug(s"Unable to renew lock '$reqLockId' for '$reqOwner'")
+      false
     }
   }
 
