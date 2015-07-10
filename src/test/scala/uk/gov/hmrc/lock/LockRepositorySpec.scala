@@ -142,15 +142,15 @@ class LockRepositorySpec extends WordSpecLike with Matchers with OptionValues wi
       repo.findAll.futureValue.loneElement shouldBe Lock(lockId, owner, existingLock.timeCreated, now.plus(new Duration(1000L)))
     }
 
-    "change an expired lock" in {
+    "not renew an expired lock" in {
       val expiredLock = Lock(lockId, owner, now.minusDays(2), now.minusDays(1))
 
       manuallyInsertLock(expiredLock)
 
       val gotLock = repo.renew(lockId, owner, new Duration(1000L)).futureValue
 
-      gotLock shouldBe true
-      repo.findAll.futureValue.loneElement shouldBe Lock(lockId, owner, expiredLock.timeCreated, now.plusSeconds(1))
+      gotLock shouldBe false
+      repo.findAll.futureValue.loneElement shouldBe expiredLock
     }
   }
 

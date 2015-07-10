@@ -81,14 +81,14 @@ class LockRepository(implicit mongo: () => DB) extends ReactiveRepository[LockFo
   def renew(reqLockId: String, reqOwner: String, forceReleaseAfter: Duration): Future[Boolean] = withCurrentTime { now =>
     val expiryTime = now.plus(forceReleaseAfter)
 
-    val selector = BSONDocument(id -> reqLockId, owner -> reqOwner)
+    val selector = BSONDocument(id -> reqLockId, owner -> reqOwner, "expiryTime" -> BSONDocument("$gte" -> BSONDateTime(now.getMillis())))
     val modifier = BSONDocument("$set" -> BSONDocument("expiryTime" -> BSONDateTime(expiryTime.getMillis())))
 
     // Use findAndModify to ensure the read and the write are performed as one atomic operation
     val command = FindAndModify(collection.name, selector, Update(modifier, false))
     this.mongo().command(command).map {
       case None =>
-        Logger.debug(s"Could not renew lock '$reqLockId' for '$reqOwner' that does not exist")
+        Logger.debug(s"Could not renew lock '$reqLockId' for '$reqOwner' that does not exist or has expired")
         false
       case Some(_) =>
         Logger.debug(s"Renewed lock '$reqLockId' for '$reqOwner' at $now.  Expires at: ${expiryTime}")
