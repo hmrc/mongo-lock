@@ -18,6 +18,10 @@ object HmrcBuild extends Build {
     .settings(
       name := appName,
       targetJvm := "jvm-1.7",
+      resolvers := Seq(
+        Resolver.bintrayRepo("hmrc", "releases"),
+        Resolver.typesafeRepo("releases")
+      ),
       libraryDependencies ++= Seq(
         Compile.playFramework,
         Compile.scalaLogging,
@@ -25,31 +29,28 @@ object HmrcBuild extends Build {
         Compile.simpleReactiveMongo,
         Compile.time,
         Test.scalaTest,
-        Test.pegdown,
-        Test.simpleReactiveMongo
-      )
-      ,
+        Test.pegdown
+      ),
       Developers()
     )
 }
 
 private object BuildDependencies {
 
-  private val playReactivemongoVersion = "3.4.1"
-  private val simpleReactivemongoVersion = "2.6.1"
+  private val playReactivemongoVersion = "4.0.0"
+  private val simpleReactivemongoVersion = "3.0.0"
 
   object Compile {
     val playFramework = "com.typesafe.play" %% "play" % PlayVersion.current
     val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.0.0"
-    val playReactiveMongo = "uk.gov.hmrc" %% "play-reactivemongo" % playReactivemongoVersion
-    val simpleReactiveMongo = "uk.gov.hmrc" %% "simple-reactivemongo" % simpleReactivemongoVersion
-    val time = "uk.gov.hmrc" %% "time" % "1.3.0"
+    val playReactiveMongo = "uk.gov.hmrc" %% "play-reactivemongo" % playReactivemongoVersion % "provided"
+    val simpleReactiveMongo = "uk.gov.hmrc" %% "simple-reactivemongo" % simpleReactivemongoVersion % "provided"
+    val time = "uk.gov.hmrc" %% "time" % "1.4.0"
   }
 
   sealed abstract class Test(scope: String) {
     val scalaTest = "org.scalatest" %% "scalatest" % "2.2.4" % scope
     val pegdown = "org.pegdown" % "pegdown" % "1.5.0" % scope
-    val simpleReactiveMongo = "uk.gov.hmrc" %% "simple-reactivemongo" % simpleReactivemongoVersion % scope classifier "tests"
   }
 
   object Test extends Test("test")

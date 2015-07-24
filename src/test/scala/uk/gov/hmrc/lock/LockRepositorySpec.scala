@@ -24,7 +24,9 @@ import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.enablers.Emptiness
 import reactivemongo.core.commands.LastError
 import uk.gov.hmrc.lock.LockFormats.Lock
-import uk.gov.hmrc.mongo.{ReactiveRepository, MongoSpecSupport}
+import uk.gov.hmrc.mongo.ReactiveRepository
+import uk.gov.hmrc.lock.MongoSpecSupport
+
 import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
