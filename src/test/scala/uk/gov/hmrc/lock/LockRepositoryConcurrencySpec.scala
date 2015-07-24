@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.lock
 
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
 import org.joda.time.chrono.ISOChronology
@@ -26,14 +25,11 @@ import org.scalatest.matchers.{MatchResult, Matcher}
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest._
 import uk.gov.hmrc.lock.LockFormats.Lock
-import uk.gov.hmrc.mongo.MongoSpecSupport
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 import scala.util.Random
 
-class LockRepositoryConcurrencySpec extends WordSpecLike with Matchers with OptionValues with MongoSpecSupport with ScalaFutures with LoneElement with Inside with Inspectors {
+class LockRepositoryConcurrencySpec extends WordSpecLike with Matchers with OptionValues with MongoSpecSupport with Awaiting with ScalaFutures with LoneElement with Inside with Inspectors {
 
   "If multiple threads try to obtain a lock simultaneously, the repository" should {
     "Ensure that the thread that wins gets true returned, and the thread that loses gets false returned with explicitly released locks" in new ConcurrentTestCase {
@@ -72,7 +68,7 @@ class LockRepositoryConcurrencySpec extends WordSpecLike with Matchers with Opti
       def nextTime() = new DateTime(instantCounter.incrementAndGet(), ISOChronology.getInstanceUTC)
     }
 
-    def await[A](future: Future[A]) = Await.result(future, FiniteDuration(5L, TimeUnit.SECONDS))
+//    def await[A](future: Future[A]) = Await.result(future, FiniteDuration(5L, TimeUnit.SECONDS))
 
     def explicitlyReleaseLock: Boolean
 
@@ -80,7 +76,7 @@ class LockRepositoryConcurrencySpec extends WordSpecLike with Matchers with Opti
       val numberOfThreads = 20
       val lockName = "lock"
 
-      await(repo.removeAll)
+      await(repo.removeAll())
 
       (1 to 50) map { i =>
         val results: Future[Seq[Boolean]] = Future.sequence((1 to numberOfThreads) map { n =>
@@ -109,7 +105,7 @@ class LockRepositoryConcurrencySpec extends WordSpecLike with Matchers with Opti
       val numberOfThreads = 20
       val lockName = "renew"
 
-      await(repo.removeAll)
+      await(repo.removeAll())
 
       (1 to 50) foreach  { i =>
         val renewThread = rnd.nextInt(10) + 1
@@ -154,13 +150,14 @@ class LockRepositoryConcurrencySpec extends WordSpecLike with Matchers with Opti
     }
 
     def testLocking(lockId: String, myOwnerId: String): Future[(Boolean, String)] = {
+
       val timeBeforeLocking = repo.nextTime()
       val expireLockAfter = Duration.standardDays(1)
 
       repo.lock(lockId, myOwnerId, expireLockAfter).flatMap {
         locked =>
           val timeAfterLocking = repo.nextTime()
-          repo.findAll.map {
+          repo.findAll().map {
             actualLocks =>
               if (locked) {
                 inside(actualLocks) { case List(Lock(id, owner, created, expiry)) =>

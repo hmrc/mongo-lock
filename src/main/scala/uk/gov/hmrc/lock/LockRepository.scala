@@ -20,6 +20,7 @@ import org.joda.time.{DateTime, Duration}
 import play.api.Logger
 import play.api.libs.json.{Format, JsValue, Json}
 import reactivemongo.api.DB
+import reactivemongo.api.commands.DefaultWriteResult
 import reactivemongo.bson.{BSONDateTime, BSONValue, BSONDocument}
 import reactivemongo.core.commands.{Update, FindAndModify, LastError}
 import reactivemongo.json.collection.JSONCollection
@@ -62,27 +63,29 @@ class LockRepository(implicit mongo: () => DB) extends ReactiveRepository[LockFo
   private val DuplicateKey = 11000
 
   def lock(reqLockId: String, reqOwner: String, forceReleaseAfter: Duration): Future[Boolean] = withCurrentTime { now =>
-    collection.remove(Json.obj(id -> reqLockId, expiryTime -> Json.obj("$lte" -> now))) flatMap { lastError =>
-      if (lastError.n != 0) {
-        Logger.warn(s"Removed ${lastError.n} expired locks for $reqLockId")
+    collection.remove(Json.obj(id -> reqLockId, expiryTime -> Json.obj("$lte" -> now))) flatMap { writeResult =>
+      if (writeResult.n != 0) {
+        Logger.warn(s"Removed ${writeResult.n} expired locks for $reqLockId")
       }
-      collection.insert(Json.obj(id -> reqLockId, owner -> reqOwner, timeCreated -> now, expiryTime -> now.plus(forceReleaseAfter)))
-        .map { _ =>
-          Logger.debug(s"Took lock '$reqLockId' for '$reqOwner' at $now.  Expires at: ${now.plus(forceReleaseAfter)}")
+
+      insert(Lock(reqLockId, reqOwner, now, now.plus(forceReleaseAfter))).map { _ =>
+          Logger.debug(s"Took lock '$reqLockId' for '$reqOwner' at $now. Expires at: ${now.plus(forceReleaseAfter)}")
           true
         }
-        .recover { case LastError(_, _, Some(DuplicateKey), _, _, _, _) =>
-          Logger.debug(s"Unable to take lock '$reqLockId' for '$reqOwner'")
-          false
+        .recover {
+          case s @ DefaultWriteResult(_, _, _, _, Some(DuplicateKey), _) =>
+            Logger.debug(s"Unable to take lock '$reqLockId' for '$reqOwner'")
+            false
         }
+
     }
   }
 
   def renew(reqLockId: String, reqOwner: String, forceReleaseAfter: Duration): Future[Boolean] = withCurrentTime { now =>
     val expiryTime = now.plus(forceReleaseAfter)
 
-    val selector = BSONDocument(id -> reqLockId, owner -> reqOwner, "expiryTime" -> BSONDocument("$gte" -> BSONDateTime(now.getMillis())))
-    val modifier = BSONDocument("$set" -> BSONDocument("expiryTime" -> BSONDateTime(expiryTime.getMillis())))
+    val selector = BSONDocument(id -> reqLockId, owner -> reqOwner, "expiryTime" -> BSONDocument("$gte" -> BSONDateTime(now.getMillis)))
+    val modifier = BSONDocument("$set" -> BSONDocument("expiryTime" -> BSONDateTime(expiryTime.getMillis)))
 
     // Use findAndModify to ensure the read and the write are performed as one atomic operation
     val command = FindAndModify(collection.name, selector, Update(modifier, false))
