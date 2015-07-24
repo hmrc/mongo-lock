@@ -1,4 +1,3 @@
-import play.core.PlayVersion
 import sbt.Keys._
 import sbt._
 import uk.gov.hmrc.SbtAutoBuildPlugin
@@ -24,7 +23,6 @@ object HmrcBuild extends Build {
       ),
       libraryDependencies ++= Seq(
         Compile.playFramework,
-        Compile.scalaLogging,
         Compile.playReactiveMongo,
         Compile.simpleReactiveMongo,
         Compile.time,
@@ -36,13 +34,13 @@ object HmrcBuild extends Build {
 }
 
 private object BuildDependencies {
+  import play.core.PlayVersion
 
   private val playReactivemongoVersion = "4.0.0"
   private val simpleReactivemongoVersion = "3.0.0"
 
   object Compile {
     val playFramework = "com.typesafe.play" %% "play" % PlayVersion.current
-    val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.0.0"
     val playReactiveMongo = "uk.gov.hmrc" %% "play-reactivemongo" % playReactivemongoVersion % "provided"
     val simpleReactiveMongo = "uk.gov.hmrc" %% "simple-reactivemongo" % simpleReactivemongoVersion % "provided"
     val time = "uk.gov.hmrc" %% "time" % "1.4.0"
