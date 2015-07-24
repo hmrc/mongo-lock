@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.mongo
+package uk.gov.hmrc.lock
 
 import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.bson.BSONDocument
 import reactivemongo.core.commands.LastError
+import uk.gov.hmrc.mongo.MongoConnector
 
 import scala.concurrent.duration._
 import reactivemongo.api.FailoverStrategy

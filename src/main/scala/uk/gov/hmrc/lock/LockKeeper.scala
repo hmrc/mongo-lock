@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.lock
 
-import java.util.UUID
 
-import org.joda.time.Duration
-
-import scala.concurrent.Future
 
 trait LockKeeper {
+
+  import java.util.UUID
+  import org.joda.time.Duration
+  import scala.concurrent.{ExecutionContext, Future}
+
   def repo: LockRepository
   def lockId: String
 
@@ -30,8 +31,7 @@ trait LockKeeper {
 
   lazy val serverId: String = UUID.randomUUID().toString
 
-  def tryLock[T](body: => Future[T]): Future[Option[T]] = {
-    import scala.concurrent.ExecutionContext.Implicits.global
+  def tryLock[T](body: => Future[T])(implicit ec : ExecutionContext): Future[Option[T]] = {
     repo.lock(lockId, serverId, forceLockReleaseAfter)
       .flatMap { acquired =>
         if (acquired) body.flatMap { case x => repo.releaseLock(lockId, serverId).map(_ => Some(x)) }
