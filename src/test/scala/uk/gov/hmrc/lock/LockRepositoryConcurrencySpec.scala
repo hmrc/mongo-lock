@@ -25,6 +25,7 @@ import org.scalatest.matchers.{MatchResult, Matcher}
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest._
 import uk.gov.hmrc.lock.LockFormats.Lock
+import uk.gov.hmrc.mongo.{Awaiting, MongoSpecSupport}
 
 import scala.concurrent.Future
 import scala.util.Random
@@ -67,8 +68,6 @@ class LockRepositoryConcurrencySpec extends WordSpecLike with Matchers with Opti
 
       def nextTime() = new DateTime(instantCounter.incrementAndGet(), ISOChronology.getInstanceUTC)
     }
-
-//    def await[A](future: Future[A]) = Await.result(future, FiniteDuration(5L, TimeUnit.SECONDS))
 
     def explicitlyReleaseLock: Boolean
 

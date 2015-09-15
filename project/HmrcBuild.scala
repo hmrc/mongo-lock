@@ -3,8 +3,6 @@ import sbt._
 import uk.gov.hmrc.SbtAutoBuildPlugin
 import uk.gov.hmrc.versioning.SbtGitVersioning
 
-
-
 object HmrcBuild extends Build {
 
   import BuildDependencies._
@@ -16,7 +14,7 @@ object HmrcBuild extends Build {
     .enablePlugins(SbtAutoBuildPlugin, SbtGitVersioning)
     .settings(
       name := appName,
-      targetJvm := "jvm-1.7",
+      scalaVersion := "2.11.7",
       resolvers := Seq(
         Resolver.bintrayRepo("hmrc", "releases"),
         Resolver.typesafeRepo("releases")
@@ -24,8 +22,8 @@ object HmrcBuild extends Build {
       libraryDependencies ++= Seq(
         Compile.playFramework,
         Compile.playReactiveMongo,
-        Compile.simpleReactiveMongo,
         Compile.time,
+        Test.reactiveMongoTest,
         Test.scalaTest,
         Test.pegdown
       ),
@@ -36,17 +34,14 @@ object HmrcBuild extends Build {
 private object BuildDependencies {
   import play.core.PlayVersion
 
-  private val playReactivemongoVersion = "4.0.0"
-  private val simpleReactivemongoVersion = "3.0.0"
-
   object Compile {
     val playFramework = "com.typesafe.play" %% "play" % PlayVersion.current
-    val playReactiveMongo = "uk.gov.hmrc" %% "play-reactivemongo" % playReactivemongoVersion % "provided"
-    val simpleReactiveMongo = "uk.gov.hmrc" %% "simple-reactivemongo" % simpleReactivemongoVersion % "provided"
-    val time = "uk.gov.hmrc" %% "time" % "1.4.0"
+    val playReactiveMongo = "uk.gov.hmrc" %% "play-reactivemongo" % "4.3.0" % "provided"
+    val time = "uk.gov.hmrc" %% "time" % "2.0.0"
   }
 
   sealed abstract class Test(scope: String) {
+    val reactiveMongoTest = "uk.gov.hmrc" %% "reactivemongo-test" % "1.1.0" % scope
     val scalaTest = "org.scalatest" %% "scalatest" % "2.2.4" % scope
     val pegdown = "org.pegdown" % "pegdown" % "1.5.0" % scope
   }

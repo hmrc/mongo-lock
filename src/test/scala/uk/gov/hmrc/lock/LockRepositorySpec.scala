@@ -25,14 +25,13 @@ import org.scalatest.enablers.Emptiness
 import reactivemongo.api.commands.DefaultWriteResult
 import reactivemongo.core.commands.LastError
 import uk.gov.hmrc.lock.LockFormats.Lock
-import uk.gov.hmrc.mongo.ReactiveRepository
+import uk.gov.hmrc.mongo.{Awaiting, MongoSpecSupport, ReactiveRepository}
 
 import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.duration.FiniteDuration
 
 
-//class LockRepositorySpec extends WordSpecLike with Matchers with MongoSpecSupport with Awaiting with BeforeAndAfterEach with OptionValues with ScalaFutures {
 class LockRepositorySpec extends WordSpecLike with Matchers with MongoSpecSupport with Awaiting with BeforeAndAfterEach with OptionValues with ScalaFutures with IntegrationPatience {
   import scala.concurrent.Future
 
@@ -41,7 +40,6 @@ class LockRepositorySpec extends WordSpecLike with Matchers with MongoSpecSuppor
   val owner = "repoSpec"
   val testContext = this
 
-//  def await[A](future: Future[A]) = Await.result(future, FiniteDuration(5L, TimeUnit.SECONDS))
   implicit def liftFuture[A](v: A) = Future.successful(v)
 
   implicit val reactiveRepositoryEmptiness = new Emptiness[ReactiveRepository[_, _]] {
