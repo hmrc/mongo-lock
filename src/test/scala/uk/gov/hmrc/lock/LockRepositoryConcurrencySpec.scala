@@ -68,8 +68,6 @@ class LockRepositoryConcurrencySpec extends WordSpecLike with Matchers with Opti
       def nextTime() = new DateTime(instantCounter.incrementAndGet(), ISOChronology.getInstanceUTC)
     }
 
-//    def await[A](future: Future[A]) = Await.result(future, FiniteDuration(5L, TimeUnit.SECONDS))
-
     def explicitlyReleaseLock: Boolean
 
     def runConcurrencyTest() {
@@ -88,7 +86,7 @@ class LockRepositoryConcurrencySpec extends WordSpecLike with Matchers with Opti
               if (explicitlyReleaseLock) repo.releaseLock(lockName, owner)
               else repo.findById(lockName).flatMap {
                 case None => throw new Exception("Should exist.")
-                case Some(lock) => repo.save(lock.copy(expiryTime = repo.nextTime().minusDays(1)))
+                case Some(lock) => repo.collection.save(lock.copy(expiryTime = repo.nextTime().minusDays(1)))
               }
             }
             else Future.successful(())

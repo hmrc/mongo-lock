@@ -21,15 +21,13 @@ import play.api.Logger
 import play.api.libs.json.{Format, JsValue, Json}
 import reactivemongo.api.DB
 import reactivemongo.api.commands.DefaultWriteResult
-import reactivemongo.bson.{BSONDateTime, BSONValue, BSONDocument}
-import reactivemongo.core.commands.{Update, FindAndModify, LastError}
-import reactivemongo.json.collection.JSONCollection
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import reactivemongo.bson.{BSONDateTime, BSONDocument}
+import reactivemongo.core.commands.{FindAndModify, Update}
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
-import scala.util.{Success, Failure}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 
 object LockFormats {
@@ -94,11 +92,12 @@ class LockRepository(implicit mongo: () => DB) extends ReactiveRepository[LockFo
         Logger.debug(s"Could not renew lock '$reqLockId' for '$reqOwner' that does not exist or has expired")
         false
       case Some(_) =>
-        Logger.debug(s"Renewed lock '$reqLockId' for '$reqOwner' at $now.  Expires at: ${expiryTime}")
+        Logger.debug(s"Renewed lock '$reqLockId' for '$reqOwner' at $now.  Expires at: $expiryTime")
         true
-    }.recover { case LastError(_, _, Some(DuplicateKey), _, _, _, _) =>
-      Logger.debug(s"Unable to renew lock '$reqLockId' for '$reqOwner'")
-      false
+    }.recover {
+      case DefaultWriteResult(_, _, _, _, Some(DuplicateKey), _) =>
+        Logger.debug(s"Unable to renew lock '$reqLockId' for '$reqOwner'")
+        false
     }
   }
 

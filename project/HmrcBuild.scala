@@ -4,59 +4,50 @@ import uk.gov.hmrc.SbtAutoBuildPlugin
 import uk.gov.hmrc.versioning.SbtGitVersioning
 
 
-
 object HmrcBuild extends Build {
-
-  import BuildDependencies._
-  import uk.gov.hmrc.DefaultBuildSettings._
 
   val appName = "mongo-lock"
 
-  lazy val mongoLock = (project in file("."))
+  lazy val microservice = Project(appName, file("."))
     .enablePlugins(SbtAutoBuildPlugin, SbtGitVersioning)
     .settings(
-      name := appName,
-      targetJvm := "jvm-1.7",
+      scalaVersion := "2.11.7",
+      libraryDependencies ++= AppDependencies(),
+      crossScalaVersions := Seq("2.11.7"),
       resolvers := Seq(
         Resolver.bintrayRepo("hmrc", "releases"),
-        Resolver.typesafeRepo("releases")
-      ),
-      libraryDependencies ++= Seq(
-        Compile.playFramework,
-        Compile.playReactiveMongo,
-        Compile.simpleReactiveMongo,
-        Compile.time,
-        Test.scalaTest,
-        Test.pegdown
-      ),
-      Developers()
+        "typesafe-releases" at "http://repo.typesafe.com/typesafe/releases/"
+      )
     )
+    .disablePlugins(sbt.plugins.JUnitXmlReportPlugin)
 }
 
-private object BuildDependencies {
+
+private object AppDependencies {
+
+  import play.PlayImport._
   import play.core.PlayVersion
 
-  private val playReactivemongoVersion = "4.0.0"
-  private val simpleReactivemongoVersion = "3.0.0"
+  val compile = Seq(
+    filters,
+    "com.typesafe.play" %% "play" % PlayVersion.current,
+    "uk.gov.hmrc" %% "play-reactivemongo" % "4.3.0",
+    "uk.gov.hmrc" %% "time" % "2.0.0"
+  )
 
-  object Compile {
-    val playFramework = "com.typesafe.play" %% "play" % PlayVersion.current
-    val playReactiveMongo = "uk.gov.hmrc" %% "play-reactivemongo" % playReactivemongoVersion % "provided"
-    val simpleReactiveMongo = "uk.gov.hmrc" %% "simple-reactivemongo" % simpleReactivemongoVersion % "provided"
-    val time = "uk.gov.hmrc" %% "time" % "1.4.0"
+  trait TestDependencies {
+    lazy val scope: String = "test"
+    lazy val test: Seq[ModuleID] = ???
   }
 
-  sealed abstract class Test(scope: String) {
-    val scalaTest = "org.scalatest" %% "scalatest" % "2.2.4" % scope
-    val pegdown = "org.pegdown" % "pegdown" % "1.5.0" % scope
+  object Test {
+    def apply() = new TestDependencies {
+      override lazy val test = Seq(
+        "org.scalatest" %% "scalatest" % "2.2.4" % scope,
+        "org.pegdown" % "pegdown" % "1.5.0" % scope
+      )
+    }.test
   }
 
-  object Test extends Test("test")
-
+  def apply() = compile ++ Test()
 }
-
-object Developers {
-
-  def apply() = developers := List[Developer]()
-}
-
