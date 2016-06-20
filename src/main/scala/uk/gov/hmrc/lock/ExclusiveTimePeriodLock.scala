@@ -16,28 +16,31 @@
 
 package uk.gov.hmrc.lock
 
+import java.util.UUID
 
+import org.joda.time.Duration
 
-trait LockKeeper {
+import scala.concurrent.{ExecutionContext, Future}
 
-  import java.util.UUID
-  import org.joda.time.Duration
-  import scala.concurrent.{ExecutionContext, Future}
+trait ExclusiveTimePeriodLock {
 
   def repo: LockRepository
   def lockId: String
 
-  val forceLockReleaseAfter: Duration
-
   lazy val serverId: String = UUID.randomUUID().toString
 
-  def tryLock[T](body: => Future[T])(implicit ec : ExecutionContext): Future[Option[T]] = {
-    repo.lock(lockId, serverId, forceLockReleaseAfter)
-      .flatMap { acquired =>
-        if (acquired) body.flatMap { case x => repo.releaseLock(lockId, serverId).map(_ => Some(x)) }
-        else Future.successful(None)
-      }.recoverWith { case ex => repo.releaseLock(lockId, serverId).flatMap(_ => Future.failed(ex)) }
-  }
+  def tryToAcquireOrRenewLock[T](holdLockFor: Duration)(body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] = {
 
-  def isLocked: Future[Boolean] = repo.isLocked(lockId, serverId)
+    val myFutureLock = for {
+      renewed <- repo.renew(lockId, serverId, holdLockFor)
+      acquired <- if (!renewed) repo.lock(lockId, serverId, holdLockFor) else Future.successful(false)
+    } yield renewed || acquired
+
+    myFutureLock.flatMap {
+      case true => body.map(x => Some(x))
+      case false => Future.successful(None)
+    } recoverWith {
+      case ex => repo.releaseLock(lockId, serverId).flatMap(_ => Future.failed(ex))
+    }
+  }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 HM Revenue & Customs
+ * Copyright 2016 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.scalatest.matchers.{MatchResult, Matcher}
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest._
 import uk.gov.hmrc.lock.LockFormats.Lock
+import uk.gov.hmrc.mongo.{Awaiting, MongoSpecSupport}
 
 import scala.concurrent.Future
 import scala.util.Random

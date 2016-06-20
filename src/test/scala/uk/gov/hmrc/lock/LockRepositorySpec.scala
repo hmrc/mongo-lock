@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 HM Revenue & Customs
+ * Copyright 2016 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,21 +18,18 @@ package uk.gov.hmrc.lock
 
 import java.util.concurrent.TimeUnit
 
-import org.joda.time.{Duration, DateTime}
+import org.joda.time.{DateTime, Duration}
 import org.scalatest._
 import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
 import org.scalatest.enablers.Emptiness
 import reactivemongo.api.commands.DefaultWriteResult
-import reactivemongo.core.commands.LastError
 import uk.gov.hmrc.lock.LockFormats.Lock
-import uk.gov.hmrc.mongo.ReactiveRepository
-
+import uk.gov.hmrc.mongo.{Awaiting, MongoSpecSupport, ReactiveRepository}
 import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.duration.FiniteDuration
 
 
-//class LockRepositorySpec extends WordSpecLike with Matchers with MongoSpecSupport with Awaiting with BeforeAndAfterEach with OptionValues with ScalaFutures {
 class LockRepositorySpec extends WordSpecLike with Matchers with MongoSpecSupport with Awaiting with BeforeAndAfterEach with OptionValues with ScalaFutures with IntegrationPatience {
   import scala.concurrent.Future
 
@@ -41,7 +38,6 @@ class LockRepositorySpec extends WordSpecLike with Matchers with MongoSpecSuppor
   val owner = "repoSpec"
   val testContext = this
 
-//  def await[A](future: Future[A]) = Await.result(future, FiniteDuration(5L, TimeUnit.SECONDS))
   implicit def liftFuture[A](v: A) = Future.successful(v)
 
   implicit val reactiveRepositoryEmptiness = new Emptiness[ReactiveRepository[_, _]] {
