@@ -18,7 +18,7 @@ package uk.gov.hmrc.lock
 
 import org.joda.time.{DateTime, Duration}
 import play.api.Logger
-import play.api.libs.json.{Format, JsValue, Json}
+import play.api.libs.json._
 import reactivemongo.api.DB
 import reactivemongo.api.commands.DefaultWriteResult
 import reactivemongo.bson.{BSONDateTime, BSONDocument}
@@ -86,19 +86,24 @@ class LockRepository(implicit mongo: () => DB) extends ReactiveRepository[LockFo
     val modifier = BSONDocument("$set" -> BSONDocument("expiryTime" -> BSONDateTime(expiryTime.getMillis)))
 
     // Use findAndModify to ensure the read and the write are performed as one atomic operation
-    val command = FindAndModify(collection.name, selector, Update(modifier, false))
-    this.mongo().command(command).map {
-      case None =>
-        Logger.debug(s"Could not renew lock '$reqLockId' for '$reqOwner' that does not exist or has expired")
-        false
-      case Some(_) =>
-        Logger.debug(s"Renewed lock '$reqLockId' for '$reqOwner' at $now.  Expires at: $expiryTime")
-        true
+    collection.findAndUpdate(
+      selector = selector,
+      update = modifier,
+      fetchNewObject = false
+    ).map { r => r.value match {
+        case None =>
+          Logger.debug(s"Could not renew lock '$reqLockId' for '$reqOwner' that does not exist or has expired")
+          false
+        case Some(_) =>
+          Logger.debug(s"Renewed lock '$reqLockId' for '$reqOwner' at $now.  Expires at: $expiryTime")
+          true
+      }
     }.recover {
       case DefaultWriteResult(_, _, _, _, Some(DuplicateKey), _) =>
         Logger.debug(s"Unable to renew lock '$reqLockId' for '$reqOwner'")
         false
     }
+
   }
 
   def releaseLock(reqLockId: String, reqOwner: String) = {
