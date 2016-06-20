@@ -9,9 +9,12 @@ This is a utility that prevents multiple instances of the same application to pe
 This can be useful of example when a REST api has to be called at a scheduled time. 
 Without this utility every instance of the application would call the REST api.
 
+There are 2 variants that can be used to instigate a lock, LockKeeper for locking for a particular task and ExclusiveTimePeriodLock to lock exclusively for a given time period (i.e. stop other instances executing the task until I stop renewing the lock)
+
 The utility uses mongodb to create a lock
 
 ##Usage
+
 
 1. Get access to mongodb
 ```
@@ -22,7 +25,10 @@ The utility uses mongodb to create a lock
    }
    val repo = LockMongoRepository(connection)
 ```
-2. Create a LockKeeper. The forceLockRelease timeout allows other apps to release and get the lock if it was stuck for some reasons
+
+2. Create a LockKeeper or ExclusiveTimePeriodLock.
+
+For LockKeeper the forceLockRelease timeout allows other apps to release and get the lock if it was stuck for some reasons
 ```
     val lockKeeper = new LockKeeper {
     
@@ -33,21 +39,42 @@ The utility uses mongodb to create a lock
         override val forceLockReleaseAfter: Duration = Duration.standardMinutes(5)
     }
 ```
-3. Use the LockKeeper to execute the code
+
+For ExclusiveTimePeriodLock the holdLockFor timeout allows other apps to claim the lock if it is not renewed for this period
+```
+    val exclusiveTimePeriodLock = new ExclusiveTimePeriodLock {
+
+        override def repo: LockRepository = repo //The repo created before
+
+        override def lockId: String = "<something unique for the operation>"
+
+        override val holdLockFor: Duration = Duration.standardMinutes(5)
+    }
+```
+
+3. Use the LockKeeper or ExclusiveTimePeriodLock to execute the code
 ```
  lockKeeper.tryLock { 
     // This will be executed on one application only
  }
 ```
 
+```
+ exclusiveTimePeriodLock.tryToAcquireOrRenew {
+    // This will be executed on one application only
+ }
+```
 
-The function in LockKeeper accepts anything that returns a Future[T]
-tryLock will return the result in an Option.
+The function in LockKeeper and ExclusiveTimePeriodLock accepts anything that returns a Future[T]
+tryLock and tryToAcquireOrRen will return the result in an Option.
 If it was not possible to acquire the lock, None is returned
 
 ```
 def tryLock[T](body: => Future[T]): Future[Option[T]] 
+def tryToAcquireOrRenew[T](body: => Future[T]): Future[Option[T]]
 ```
+
+
 
 ## Installing
 

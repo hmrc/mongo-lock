@@ -35,24 +35,28 @@ import scala.concurrent.Future
 
     "tryToAcquireOrRenewLock" should {
 
+      val timeout: Duration = new Duration(1000)
+
       val lock = new ExclusiveTimePeriodLock {
         override def lockId = "lockId"
 
         override def repo: LockRepository = lockRepo
+
+        override def holdLockFor: Duration = timeout
       }
 
       val lock2 = new ExclusiveTimePeriodLock {
         override def lockId = "lockId"
 
         override def repo: LockRepository = lockRepo
-      }
 
-      val timeout: Duration = new Duration(1000)
+        override def holdLockFor: Duration = timeout
+      }
       def increment: Future[Unit] = Future.successful(executionChecker += 1)
 
       "execute the body if no previous lock is set" in {
 
-        lock.tryToAcquireOrRenewLock(timeout) {
+        lock.tryToAcquireOrRenewLock {
           increment
         }.futureValue
         executionChecker shouldBe 1
@@ -60,11 +64,11 @@ import scala.concurrent.Future
 
       "execute the body if the lock for same serverId exists" in {
 
-        lock.tryToAcquireOrRenewLock(timeout) {
+        lock.tryToAcquireOrRenewLock {
           increment
         }.futureValue
 
-        lock.tryToAcquireOrRenewLock(timeout) {
+        lock.tryToAcquireOrRenewLock {
           increment
         }.futureValue
 
@@ -73,11 +77,11 @@ import scala.concurrent.Future
 
       "not execute the body and exit if the lock for another serverId exists" in {
 
-        lock.tryToAcquireOrRenewLock(timeout) {
+        lock.tryToAcquireOrRenewLock {
           increment
         }.futureValue
 
-        lock2.tryToAcquireOrRenewLock(timeout) {
+        lock2.tryToAcquireOrRenewLock {
           increment
         }.futureValue
 
@@ -86,13 +90,13 @@ import scala.concurrent.Future
       }
       "execute the body if run after the keepLockFor time expired" in {
 
-        lock.tryToAcquireOrRenewLock(timeout) {
+        lock.tryToAcquireOrRenewLock {
           increment
         }.futureValue
 
         Thread.sleep(timeout.getMillis + 1)
 
-        lock2.tryToAcquireOrRenewLock(timeout) {
+        lock2.tryToAcquireOrRenewLock {
           increment
         }.futureValue
 

@@ -27,9 +27,11 @@ trait ExclusiveTimePeriodLock {
   def repo: LockRepository
   def lockId: String
 
+  def holdLockFor: Duration
+
   lazy val serverId: String = UUID.randomUUID().toString
 
-  def tryToAcquireOrRenewLock[T](holdLockFor: Duration)(body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] = {
+  def tryToAcquireOrRenewLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] = {
 
     val myFutureLock = for {
       renewed <- repo.renew(lockId, serverId, holdLockFor)
