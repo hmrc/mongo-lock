@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 HM Revenue & Customs
+ * Copyright 2016 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,9 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.{MatchResult, Matcher}
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest._
+import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.lock.LockFormats.Lock
+import uk.gov.hmrc.mongo.{Awaiting, MongoSpecSupport}
 
 import scala.concurrent.Future
 import scala.util.Random
@@ -86,7 +88,13 @@ class LockRepositoryConcurrencySpec extends WordSpecLike with Matchers with Opti
               if (explicitlyReleaseLock) repo.releaseLock(lockName, owner)
               else repo.findById(lockName).flatMap {
                 case None => throw new Exception("Should exist.")
-                case Some(lock) => repo.collection.save(lock.copy(expiryTime = repo.nextTime().minusDays(1)))
+                case Some(lock) =>
+                  import reactivemongo.json.ImplicitBSONHandlers._
+                  implicit val fmt = LockFormats.format
+                  repo.collection.update(
+                    selector = Json.toJson(lock).as[JsObject],
+                    update = Json.toJson(lock.copy(expiryTime = repo.nextTime().minusDays(1))).as[JsObject],
+                    upsert = true)
               }
             }
             else Future.successful(())
