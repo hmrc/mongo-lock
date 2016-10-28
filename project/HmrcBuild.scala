@@ -1,5 +1,6 @@
 import sbt.Keys._
 import sbt._
+import uk.gov.hmrc.DefaultBuildSettings._
 import uk.gov.hmrc.SbtAutoBuildPlugin
 import uk.gov.hmrc.versioning.SbtGitVersioning
 
@@ -10,6 +11,7 @@ object HmrcBuild extends Build {
 
   lazy val microservice = Project(appName, file("."))
     .enablePlugins(SbtAutoBuildPlugin, SbtGitVersioning)
+    .settings(defaultSettings(): _*)
     .settings(
       scalaVersion := "2.11.7",
       libraryDependencies ++= AppDependencies(),
@@ -25,14 +27,14 @@ object HmrcBuild extends Build {
 
 private object AppDependencies {
 
-  import play.PlayImport._
+  import play.sbt.PlayImport._
   import play.core.PlayVersion
 
   val compile = Seq(
     filters,
     "com.typesafe.play" %% "play" % PlayVersion.current % "provided",
-    "uk.gov.hmrc" %% "simple-reactivemongo" % "4.8.0",
-    "uk.gov.hmrc" %% "time" % "2.0.0"
+    "uk.gov.hmrc" %% "simple-reactivemongo" % "5.0.0",
+    "uk.gov.hmrc" %% "time" % "3.0.0"
   )
 
   trait TestDependencies {
