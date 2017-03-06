@@ -33,7 +33,7 @@ private object AppDependencies {
   val compile = Seq(
     filters,
     "com.typesafe.play" %% "play" % PlayVersion.current % "provided",
-    "uk.gov.hmrc" %% "simple-reactivemongo" % "5.0.0",
+    "uk.gov.hmrc" %% "simple-reactivemongo" % "5.2.0",
     "uk.gov.hmrc" %% "time" % "3.0.0"
   )
 
@@ -47,7 +47,7 @@ private object AppDependencies {
       override lazy val test = Seq(
         "org.scalatest" %% "scalatest" % "2.2.4" % scope,
         "org.pegdown" % "pegdown" % "1.5.0" % scope,
-        "uk.gov.hmrc" %% "reactivemongo-test" % "1.6.0" % scope
+        "uk.gov.hmrc" %% "reactivemongo-test" % "2.0.0" % scope
       )
     }.test
   }
