@@ -13,9 +13,9 @@ object HmrcBuild extends Build {
     .enablePlugins(SbtAutoBuildPlugin, SbtGitVersioning)
     .settings(defaultSettings(): _*)
     .settings(
-      scalaVersion := "2.11.7",
+      scalaVersion := "2.11.8",
       libraryDependencies ++= AppDependencies(),
-      crossScalaVersions := Seq("2.11.7"),
+      crossScalaVersions := Seq("2.11.8"),
       resolvers := Seq(
         Resolver.bintrayRepo("hmrc", "releases"),
         "typesafe-releases" at "http://repo.typesafe.com/typesafe/releases/"
@@ -45,8 +45,8 @@ private object AppDependencies {
   object Test {
     def apply() = new TestDependencies {
       override lazy val test = Seq(
-        "org.scalatest" %% "scalatest" % "2.2.4" % scope,
-        "org.pegdown" % "pegdown" % "1.5.0" % scope,
+        "org.scalatest" %% "scalatest" % "3.0.1" % scope,
+        "org.pegdown" % "pegdown" % "1.6.0" % scope,
         "uk.gov.hmrc" %% "reactivemongo-test" % "2.0.0" % scope
       )
     }.test
