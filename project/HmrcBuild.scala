@@ -1,34 +1,9 @@
-import sbt.Keys._
 import sbt._
-import uk.gov.hmrc.DefaultBuildSettings._
-import uk.gov.hmrc.SbtAutoBuildPlugin
-import uk.gov.hmrc.versioning.SbtGitVersioning
 
+object AppDependencies {
 
-object HmrcBuild extends Build {
-
-  val appName = "mongo-lock"
-
-  lazy val microservice = Project(appName, file("."))
-    .enablePlugins(SbtAutoBuildPlugin, SbtGitVersioning)
-    .settings(defaultSettings(): _*)
-    .settings(
-      scalaVersion := "2.11.8",
-      libraryDependencies ++= AppDependencies(),
-      crossScalaVersions := Seq("2.11.8"),
-      resolvers := Seq(
-        Resolver.bintrayRepo("hmrc", "releases"),
-        "typesafe-releases" at "http://repo.typesafe.com/typesafe/releases/"
-      )
-    )
-    .disablePlugins(sbt.plugins.JUnitXmlReportPlugin)
-}
-
-
-private object AppDependencies {
-
-  import play.sbt.PlayImport._
   import play.core.PlayVersion
+  import play.sbt.PlayImport._
 
   val compile = Seq(
     filters,
