@@ -57,6 +57,7 @@ object LockMongoRepository {
 class LockRepository(implicit mongo: () => DB) extends ReactiveRepository[LockFormats.Lock, String]("locks", mongo, LockFormats.format, implicitly[Format[String]]) {
 
   import uk.gov.hmrc.lock.LockFormats._
+  import reactivemongo.play.json.ImplicitBSONHandlers._
 
   private val DuplicateKey = 11000
 
