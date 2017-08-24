@@ -22,7 +22,7 @@ import org.joda.time.{DateTime, Duration}
 import org.scalatest._
 import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
 import org.scalatest.enablers.Emptiness
-import reactivemongo.api.commands.DefaultWriteResult
+import reactivemongo.api.commands.{DefaultWriteResult, LastError}
 import uk.gov.hmrc.lock.LockFormats.Lock
 import uk.gov.hmrc.mongo.{Awaiting, MongoSpecSupport, ReactiveRepository}
 import uk.gov.hmrc.time.DateTimeUtils
@@ -51,6 +51,7 @@ class LockRepositorySpec extends WordSpecLike with Matchers with MongoSpecSuppor
   }
 
   override protected def beforeEach(): Unit = {
+    await(repo.collection.db.connection.active)
     await(repo.removeAll())
   }
 
@@ -299,7 +300,7 @@ class LockRepositorySpec extends WordSpecLike with Matchers with MongoSpecSuppor
       val lock2 = Lock("lockName", "owner2", now.plusDays(3), now.plusDays(4))
       manuallyInsertLock(lock1)
 
-      val error = the[DefaultWriteResult] thrownBy manuallyInsertLock(lock2)
+      val error = the[LastError] thrownBy manuallyInsertLock(lock2)
       error.code should contain(DuplicateKey)
 
       await(repo.findAll()).head shouldBe lock1

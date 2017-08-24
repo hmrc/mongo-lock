@@ -20,7 +20,7 @@ import org.joda.time.{DateTime, Duration}
 import play.api.Logger
 import play.api.libs.json._
 import reactivemongo.api.DB
-import reactivemongo.api.commands.DefaultWriteResult
+import reactivemongo.api.commands.{DefaultWriteResult, LastError}
 import reactivemongo.bson.{BSONDateTime, BSONDocument}
 import reactivemongo.core.commands.{FindAndModify, Update}
 import uk.gov.hmrc.mongo.ReactiveRepository
@@ -72,7 +72,7 @@ class LockRepository(implicit mongo: () => DB) extends ReactiveRepository[LockFo
           true
         }
         .recover {
-          case s @ DefaultWriteResult(_, _, _, _, Some(DuplicateKey), _) =>
+          case s @ LastError(_, _, Some(DuplicateKey), _, _, _, _, _, _, _, _, _, _, _) =>
             Logger.debug(s"Unable to take lock '$reqLockId' for '$reqOwner'")
             false
         }
@@ -100,7 +100,7 @@ class LockRepository(implicit mongo: () => DB) extends ReactiveRepository[LockFo
           true
       }
     }.recover {
-      case DefaultWriteResult(_, _, _, _, Some(DuplicateKey), _) =>
+      case LastError(_, _, Some(DuplicateKey), _, _, _, _, _, _, _, _, _, _, _) =>
         Logger.debug(s"Unable to renew lock '$reqLockId' for '$reqOwner'")
         false
     }
