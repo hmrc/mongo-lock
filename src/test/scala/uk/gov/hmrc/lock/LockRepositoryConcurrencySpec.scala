@@ -89,7 +89,7 @@ class LockRepositoryConcurrencySpec extends WordSpecLike with Matchers with Opti
               else repo.findById(lockName).flatMap {
                 case None => throw new Exception("Should exist.")
                 case Some(lock) =>
-                  import reactivemongo.json.ImplicitBSONHandlers._
+                  import reactivemongo.play.json.ImplicitBSONHandlers._
                   implicit val fmt = LockFormats.format
                   repo.collection.update(
                     selector = Json.toJson(lock).as[JsObject],
