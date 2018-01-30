@@ -9,7 +9,7 @@ object AppDependencies {
     filters,
     "com.typesafe.play" %% "play" % PlayVersion.current % "provided",
     // TODO: Change this to reflect released version
-    "uk.gov.hmrc" %% "simple-reactivemongo" % "6.0.0",
+    "uk.gov.hmrc" %% "simple-reactivemongo" % "6.1.0",
     "uk.gov.hmrc" %% "time" % "3.0.0"
   )
 
