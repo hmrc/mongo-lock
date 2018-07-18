@@ -1,20 +1,30 @@
 import uk.gov.hmrc.DefaultBuildSettings.defaultSettings
+import SbtGitVersioning.majorVersion
 
 enablePlugins(SbtAutoBuildPlugin, SbtGitVersioning)
 
 name := "mongo-lock"
 
+majorVersion := 5
+
 defaultSettings()
 
-scalaVersion := "2.11.8"
+scalacOptions ++= Seq(
+  "-feature",
+  "-deprecation",
+  "-language:implicitConversions",
+  "-language:reflectiveCalls"
+)
+
+scalaVersion := "2.11.12"
 
 libraryDependencies ++= AppDependencies()
 
-crossScalaVersions := Seq("2.11.8")
+crossScalaVersions := Seq("2.11.12")
 
 resolvers := Seq(
   Resolver.bintrayRepo("hmrc", "releases"),
-  "typesafe-releases" at "http://repo.typesafe.com/typesafe/releases/"
+  Resolver.typesafeRepo("releases")
 )
 
 disablePlugins(sbt.plugins.JUnitXmlReportPlugin)
