@@ -20,9 +20,9 @@ import java.util.concurrent.TimeUnit
 
 import org.joda.time.{DateTime, Duration}
 import org.scalatest._
-import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.enablers.Emptiness
-import reactivemongo.api.commands.{DefaultWriteResult, LastError}
+import reactivemongo.api.commands.LastError
 import uk.gov.hmrc.lock.LockFormats.Lock
 import uk.gov.hmrc.mongo.{Awaiting, MongoSpecSupport, ReactiveRepository}
 import uk.gov.hmrc.time.DateTimeUtils

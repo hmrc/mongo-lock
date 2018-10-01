@@ -39,7 +39,7 @@ trait ExclusiveTimePeriodLock {
     } yield renewed || acquired
 
     myFutureLock.flatMap {
-      case true => body.map(x => Some(x))
+      case true => body.map(Option.apply)
       case false => Future.successful(None)
     } recoverWith {
       case ex => repo.releaseLock(lockId, serverId).flatMap(_ => Future.failed(ex))

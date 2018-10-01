@@ -20,9 +20,8 @@ import org.joda.time.{DateTime, Duration}
 import play.api.Logger
 import play.api.libs.json._
 import reactivemongo.api.DB
-import reactivemongo.api.commands.{DefaultWriteResult, LastError}
+import reactivemongo.api.commands.LastError
 import reactivemongo.bson.{BSONDateTime, BSONDocument}
-import reactivemongo.core.commands.{FindAndModify, Update}
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
@@ -37,9 +36,9 @@ object LockFormats {
                   timeCreated: DateTime,
                   expiryTime: DateTime)
 
-  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+  implicit val dateFormat: Format[DateTime] = ReactiveMongoFormats.dateTimeFormats
 
-  implicit val format = ReactiveMongoFormats.mongoEntity(Format(Json.reads[Lock], Json.writes[Lock]))
+  implicit val format: Format[Lock] = ReactiveMongoFormats.mongoEntity(Format(Json.reads[Lock], Json.writes[Lock]))
 
   val id = "_id"
   val owner = "owner"
@@ -56,13 +55,13 @@ object LockMongoRepository {
 
 class LockRepository(implicit mongo: () => DB) extends ReactiveRepository[LockFormats.Lock, String]("locks", mongo, LockFormats.format, implicitly[Format[String]]) {
 
-  import uk.gov.hmrc.lock.LockFormats._
   import reactivemongo.play.json.ImplicitBSONHandlers._
+  import uk.gov.hmrc.lock.LockFormats._
 
   private val DuplicateKey = 11000
 
   def lock(reqLockId: String, reqOwner: String, forceReleaseAfter: Duration): Future[Boolean] = withCurrentTime { now =>
-    collection.remove(Json.obj(id -> reqLockId, expiryTime -> Json.obj("$lte" -> now))) flatMap { writeResult =>
+    collection.delete().one(Json.obj(id -> reqLockId, expiryTime -> Json.obj("$lte" -> now))) flatMap { writeResult =>
       if (writeResult.n != 0) {
         Logger.warn(s"Removed ${writeResult.n} expired locks for $reqLockId")
       }
@@ -107,12 +106,12 @@ class LockRepository(implicit mongo: () => DB) extends ReactiveRepository[LockFo
 
   }
 
-  def releaseLock(reqLockId: String, reqOwner: String) = {
+  def releaseLock(reqLockId: String, reqOwner: String): Future[Unit] = {
     Logger.debug(s"Releasing lock '$reqLockId' for '$reqOwner'")
-    collection.remove(Json.obj(id -> reqLockId, owner -> reqOwner)).map(_ => ())
+    collection.delete().one(Json.obj(id -> reqLockId, owner -> reqOwner)).map(_ => ())
   }
 
-  def isLocked(reqLockId: String, reqOwner: String) = withCurrentTime { now =>
+  def isLocked(reqLockId: String, reqOwner: String): Future[Boolean] = withCurrentTime { now =>
     collection.find(Json.obj(id -> reqLockId, owner -> reqOwner, expiryTime -> Json.obj("$gt" -> now))).one[JsValue].map(_.isDefined)
   }
 
