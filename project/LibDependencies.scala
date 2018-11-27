@@ -14,12 +14,12 @@ object LibDependencies {
     play25 = Seq(
       "com.typesafe.play" %% "filters-helpers"      % play25Version,
       "com.typesafe.play" %% "play"                 % play25Version,
-      "uk.gov.hmrc"       %% "simple-reactivemongo" % "7.4.0-play-25"
+      "uk.gov.hmrc"       %% "simple-reactivemongo" % "7.6.0-play-25"
     ),
     play26 = Seq(
       "com.typesafe.play" %% "filters-helpers"      % play26Version,
       "com.typesafe.play" %% "play"                 % play26Version,
-      "uk.gov.hmrc"       %% "simple-reactivemongo" % "7.4.0-play-26"
+      "uk.gov.hmrc"       %% "simple-reactivemongo" % "7.6.0-play-26"
     )
   )
 
@@ -29,11 +29,11 @@ object LibDependencies {
       "org.pegdown"   % "pegdown"    % "1.6.0" % Test
     ),
     play25 = Seq(
-      "uk.gov.hmrc"    %% "reactivemongo-test" % "4.2.0-play-25" % Test,
+      "uk.gov.hmrc"    %% "reactivemongo-test" % "4.4.0-play-25" % Test,
       "ch.qos.logback" % "logback-classic"     % "1.1.2"         % Test
     ),
     play26 = Seq(
-      "uk.gov.hmrc"    %% "reactivemongo-test" % "4.2.0-play-26" % Test,
+      "uk.gov.hmrc"    %% "reactivemongo-test" % "4.4.0-play-26" % Test,
       "ch.qos.logback" % "logback-classic"     % "1.2.3"         % Test
     )
   )
