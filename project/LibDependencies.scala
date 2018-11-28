@@ -4,7 +4,7 @@ object LibDependencies {
   
   def apply(): Seq[ModuleID] = compile ++ test
 
-  private val play25Version = "2.5.12"
+  private val play25Version = "2.5.19"
   private val play26Version = "2.6.20"
 
   private val compile: Seq[ModuleID] = PlayCrossCompilation.dependencies(
