@@ -1,8 +1,12 @@
 import uk.gov.hmrc.DefaultBuildSettings.defaultSettings
 
-enablePlugins(SbtAutoBuildPlugin, SbtGitVersioning)
+enablePlugins(SbtAutoBuildPlugin, SbtGitVersioning, SbtArtifactory)
 
 name := "mongo-lock"
+
+majorVersion := 5
+
+makePublicallyAvailableOnBintray := true
 
 defaultSettings()
 
