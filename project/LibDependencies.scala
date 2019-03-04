@@ -9,7 +9,7 @@ object LibDependencies {
 
   private val compile: Seq[ModuleID] = PlayCrossCompilation.dependencies(
     shared = Seq(
-      "uk.gov.hmrc" %% "time" % "3.2.0",
+      "uk.gov.hmrc" %% "time" % "3.3.0",
       // force dependencies due to security flaws found in jackson-databind < 2.9.x using XRay
       "com.fasterxml.jackson.core"     % "jackson-core"            % "2.9.7",
       "com.fasterxml.jackson.core"     % "jackson-databind"        % "2.9.7",
@@ -20,7 +20,7 @@ object LibDependencies {
     play25 = Seq(
       "com.typesafe.play" %% "filters-helpers"      % play25Version,
       "com.typesafe.play" %% "play"                 % play25Version,
-      "uk.gov.hmrc"       %% "simple-reactivemongo" % "7.9.0-play-25",
+      "uk.gov.hmrc"       %% "simple-reactivemongo" % "7.14.0-play-25",
       // force dependencies due to security flaws found in xercesImpl 2.11.0
       // only applies to play 2.5 since it was removed from play 2.6 
       // https://github.com/playframework/playframework/blob/master/documentation/manual/releases/release26/migration26/Migration26.md#xercesimpl-removal
@@ -29,7 +29,7 @@ object LibDependencies {
     play26 = Seq(
       "com.typesafe.play" %% "filters-helpers"      % play26Version,
       "com.typesafe.play" %% "play"                 % play26Version,
-      "uk.gov.hmrc"       %% "simple-reactivemongo" % "7.9.0-play-26"
+      "uk.gov.hmrc"       %% "simple-reactivemongo" % "7.14.0-play-26"
     )
   )
 
@@ -40,10 +40,10 @@ object LibDependencies {
       "ch.qos.logback" %  "logback-classic" % "1.2.3" % Test
     ),
     play25 = Seq(
-      "uk.gov.hmrc"    %% "reactivemongo-test" % "4.6.0-play-25" % Test
+      "uk.gov.hmrc"    %% "reactivemongo-test" % "4.9.0-play-25" % Test
     ),
     play26 = Seq(
-      "uk.gov.hmrc"    %% "reactivemongo-test" % "4.6.0-play-26" % Test
+      "uk.gov.hmrc"    %% "reactivemongo-test" % "4.9.0-play-26" % Test
     )
   )
 }

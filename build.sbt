@@ -11,11 +11,11 @@ majorVersion                     := 6
 
 defaultSettings()
 
-scalaVersion := "2.11.8"
+scalaVersion := "2.11.12"
 
 libraryDependencies ++= LibDependencies()
 
-crossScalaVersions := Seq("2.11.8")
+crossScalaVersions := Seq("2.11.12", "2.12.8")
 
 resolvers := Seq(
   Resolver.bintrayRepo("hmrc", "releases"),
