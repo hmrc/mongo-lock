@@ -39,10 +39,10 @@ object LibDependencies {
       "ch.qos.logback" %  "logback-classic" % "1.2.3" % Test
     ),
     play25 = Seq(
-      "uk.gov.hmrc"    %% "reactivemongo-test" % "4.15.0-play-25" % Test
+      "uk.gov.hmrc"    %% "reactivemongo-test" % "4.16.0-play-25" % Test
     ),
     play26 = Seq(
-      "uk.gov.hmrc"    %% "reactivemongo-test" % "4.15.0-play-26" % Test
+      "uk.gov.hmrc"    %% "reactivemongo-test" % "4.16.0-play-26" % Test
     )
   )
 }
