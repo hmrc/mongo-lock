@@ -15,7 +15,7 @@ scalaVersion := "2.11.12"
 
 libraryDependencies ++= LibDependencies()
 
-crossScalaVersions := Seq("2.11.12", "2.12.8")
+crossScalaVersions := Seq("2.11.12", "2.12.10")
 
 resolvers := Seq(
   Resolver.bintrayRepo("hmrc", "releases"),
