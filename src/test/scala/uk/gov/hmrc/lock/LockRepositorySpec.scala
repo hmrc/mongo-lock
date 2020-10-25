@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.lock
 
-import java.util.concurrent.TimeUnit
-
 import org.joda.time.{DateTime, Duration}
 import org.scalatest._
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
@@ -26,8 +24,6 @@ import reactivemongo.api.commands.LastError
 import uk.gov.hmrc.lock.LockFormats.Lock
 import uk.gov.hmrc.mongo.{Awaiting, MongoSpecSupport, ReactiveRepository}
 import uk.gov.hmrc.time.DateTimeUtils
-
-import scala.concurrent.duration.FiniteDuration
 
 
 class LockRepositorySpec extends WordSpecLike with Matchers with MongoSpecSupport with Awaiting with BeforeAndAfterEach with OptionValues with ScalaFutures with IntegrationPatience {
@@ -45,8 +41,6 @@ class LockRepositorySpec extends WordSpecLike with Matchers with MongoSpecSuppor
   }
 
   val repo = new LockRepository {
-    val retryIntervalMillis = FiniteDuration(5L, TimeUnit.SECONDS).toMillis
-
     override def withCurrentTime[A](f: (DateTime) => A) = f(now)
   }
 
