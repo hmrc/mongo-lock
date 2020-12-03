@@ -1,7 +1,7 @@
 
 mongo-lock
 ====
-[![Build Status](https://travis-ci.org/hmrc/mongo-lock.svg?branch=master)](https://travis-ci.org/hmrc/mongo-lock) [ ![Download](https://api.bintray.com/packages/hmrc/releases/mongo-lock/images/download.svg) ](https://bintray.com/hmrc/releases/mongo-lock/_latestVersion)
+
 
 #Mongo-Lock
 
