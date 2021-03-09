@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package uk.gov.hmrc.lock
 
 import org.joda.time.{DateTime, Duration}
-import play.api.Logger
 import play.api.libs.json._
 import reactivemongo.api.DB
 import reactivemongo.api.commands.LastError
@@ -54,65 +53,66 @@ object LockMongoRepository {
 }
 
 class LockRepository(implicit mongo: () => DB) extends ReactiveRepository[LockFormats.Lock, String]("locks", mongo, LockFormats.format, implicitly[Format[String]]) {
-
   import reactivemongo.play.json.ImplicitBSONHandlers._
   import uk.gov.hmrc.lock.LockFormats._
 
   private val DuplicateKey = 11000
 
-  def lock(reqLockId: String, reqOwner: String, forceReleaseAfter: Duration): Future[Boolean] = withCurrentTime { now =>
-    collection.delete().one(Json.obj(id -> reqLockId, expiryTime -> Json.obj("$lte" -> now))) flatMap { writeResult =>
-      if (writeResult.n != 0) {
-        Logger.warn(s"Removed ${writeResult.n} expired locks for $reqLockId")
-      }
-
-      insert(Lock(reqLockId, reqOwner, now, now.plus(forceReleaseAfter))).map { _ =>
-          Logger.debug(s"Took lock '$reqLockId' for '$reqOwner' at $now. Expires at: ${now.plus(forceReleaseAfter)}")
-          true
+  def lock(reqLockId: String, reqOwner: String, forceReleaseAfter: Duration): Future[Boolean] =
+    withCurrentTime { now =>
+      collection.delete().one(Json.obj(id -> reqLockId, expiryTime -> Json.obj("$lte" -> now))) flatMap { writeResult =>
+        if (writeResult.n != 0) {
+          logger.warn(s"Removed ${writeResult.n} expired locks for $reqLockId")
         }
-        .recover {
-          case s @ LastError(_, _, Some(DuplicateKey), _, _, _, _, _, _, _, _, _, _, _) =>
-            Logger.debug(s"Unable to take lock '$reqLockId' for '$reqOwner'")
+
+        insert(Lock(reqLockId, reqOwner, now, now.plus(forceReleaseAfter))).map { _ =>
+            logger.debug(s"Took lock '$reqLockId' for '$reqOwner' at $now. Expires at: ${now.plus(forceReleaseAfter)}")
+            true
+          }
+          .recover {
+            case s @ LastError(_, _, Some(DuplicateKey), _, _, _, _, _, _, _, _, _, _, _) =>
+              logger.debug(s"Unable to take lock '$reqLockId' for '$reqOwner'")
+              false
+          }
+
+      }
+    }
+
+  def renew(reqLockId: String, reqOwner: String, forceReleaseAfter: Duration): Future[Boolean] =
+    withCurrentTime { now =>
+      val expiryTime = now.plus(forceReleaseAfter)
+
+      val selector = BSONDocument(id -> reqLockId, owner -> reqOwner, "expiryTime" -> BSONDocument("$gte" -> BSONDateTime(now.getMillis)))
+      val modifier = BSONDocument("$set" -> BSONDocument("expiryTime" -> BSONDateTime(expiryTime.getMillis)))
+
+      // Use findAndModify to ensure the read and the write are performed as one atomic operation
+      collection.findAndUpdate(
+        selector = selector,
+        update = modifier,
+        fetchNewObject = false
+      ).map(
+        _.value match {
+          case None =>
+            logger.debug(s"Could not renew lock '$reqLockId' for '$reqOwner' that does not exist or has expired")
             false
+          case Some(_) =>
+            logger.debug(s"Renewed lock '$reqLockId' for '$reqOwner' at $now.  Expires at: $expiryTime")
+            true
         }
-
-    }
-  }
-
-  def renew(reqLockId: String, reqOwner: String, forceReleaseAfter: Duration): Future[Boolean] = withCurrentTime { now =>
-    val expiryTime = now.plus(forceReleaseAfter)
-
-    val selector = BSONDocument(id -> reqLockId, owner -> reqOwner, "expiryTime" -> BSONDocument("$gte" -> BSONDateTime(now.getMillis)))
-    val modifier = BSONDocument("$set" -> BSONDocument("expiryTime" -> BSONDateTime(expiryTime.getMillis)))
-
-    // Use findAndModify to ensure the read and the write are performed as one atomic operation
-    collection.findAndUpdate(
-      selector = selector,
-      update = modifier,
-      fetchNewObject = false
-    ).map { r => r.value match {
-        case None =>
-          Logger.debug(s"Could not renew lock '$reqLockId' for '$reqOwner' that does not exist or has expired")
+      ).recover {
+        case LastError(_, _, Some(DuplicateKey), _, _, _, _, _, _, _, _, _, _, _) =>
+          logger.debug(s"Unable to renew lock '$reqLockId' for '$reqOwner'")
           false
-        case Some(_) =>
-          Logger.debug(s"Renewed lock '$reqLockId' for '$reqOwner' at $now.  Expires at: $expiryTime")
-          true
       }
-    }.recover {
-      case LastError(_, _, Some(DuplicateKey), _, _, _, _, _, _, _, _, _, _, _) =>
-        Logger.debug(s"Unable to renew lock '$reqLockId' for '$reqOwner'")
-        false
     }
-
-  }
 
   def releaseLock(reqLockId: String, reqOwner: String): Future[Unit] = {
-    Logger.debug(s"Releasing lock '$reqLockId' for '$reqOwner'")
+    logger.debug(s"Releasing lock '$reqLockId' for '$reqOwner'")
     collection.delete().one(Json.obj(id -> reqLockId, owner -> reqOwner)).map(_ => ())
   }
 
-  def isLocked(reqLockId: String, reqOwner: String): Future[Boolean] = withCurrentTime { now =>
-    collection.find(Json.obj(id -> reqLockId, owner -> reqOwner, expiryTime -> Json.obj("$gt" -> now))).one[JsValue].map(_.isDefined)
-  }
-
+  def isLocked(reqLockId: String, reqOwner: String): Future[Boolean] =
+    withCurrentTime { now =>
+      collection.find(Json.obj(id -> reqLockId, owner -> reqOwner, expiryTime -> Json.obj("$gt" -> now))).one[JsValue].map(_.isDefined)
+    }
 }
