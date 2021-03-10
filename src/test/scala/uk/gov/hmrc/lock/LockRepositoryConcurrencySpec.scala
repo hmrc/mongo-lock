@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,10 @@ import org.joda.time.chrono.ISOChronology
 import org.joda.time.{DateTime, DateTimeZone, Duration}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.{MatchResult, Matcher}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatest.time.{Millis, Seconds, Span}
-import org.scalatest._
+import org.scalatest.{OptionValues, LoneElement, Inside, Inspectors}
 import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.lock.LockFormats.Lock
 import uk.gov.hmrc.mongo.{Awaiting, MongoSpecSupport}
@@ -31,7 +33,16 @@ import uk.gov.hmrc.mongo.{Awaiting, MongoSpecSupport}
 import scala.concurrent.Future
 import scala.util.Random
 
-class LockRepositoryConcurrencySpec extends WordSpecLike with Matchers with OptionValues with MongoSpecSupport with Awaiting with ScalaFutures with LoneElement with Inside with Inspectors {
+class LockRepositoryConcurrencySpec
+  extends AnyWordSpecLike
+     with Matchers
+     with OptionValues
+     with MongoSpecSupport
+     with Awaiting
+     with ScalaFutures
+     with LoneElement
+     with Inside
+     with Inspectors {
 
   "If multiple threads try to obtain a lock simultaneously, the repository" should {
     "Ensure that the thread that wins gets true returned, and the thread that loses gets false returned with explicitly released locks" in new ConcurrentTestCase {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,19 +19,29 @@ package uk.gov.hmrc.lock
 import java.util.concurrent.TimeUnit
 
 import org.joda.time.{DateTime, Duration}
-import org.scalatest._
+import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatest.enablers.Emptiness
 import reactivemongo.api.commands.LastError
 import uk.gov.hmrc.lock.LockFormats.Lock
 import uk.gov.hmrc.mongo.{Awaiting, MongoSpecSupport, ReactiveRepository}
 import uk.gov.hmrc.time.DateTimeUtils
 
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 
-class LockRepositorySpec extends WordSpecLike with Matchers with MongoSpecSupport with Awaiting with BeforeAndAfterEach with OptionValues with ScalaFutures with IntegrationPatience {
-  import scala.concurrent.Future
+class LockRepositorySpec
+  extends AnyWordSpecLike
+     with Matchers
+     with MongoSpecSupport
+     with Awaiting
+     with BeforeAndAfterEach
+     with OptionValues
+     with ScalaFutures
+     with IntegrationPatience {
 
   private implicit val now = DateTimeUtils.now
   val lockId = "testLock"
