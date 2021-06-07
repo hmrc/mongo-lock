@@ -15,7 +15,6 @@ The utility uses mongodb to create a lock
 
 ##Usage
 
-
 1. Get access to mongodb
 ```
     val connection = {
